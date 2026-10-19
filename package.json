@@ -15,7 +15,7 @@
     "test": "node --experimental-strip-types scripts/test-business.mjs && node --experimental-strip-types --test scripts/api.test.mjs"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.0.0",
+    "@supabase/supabase-js": "2.118.0",
     "react": "19.2.6",
     "react-dom": "19.2.6"
   },

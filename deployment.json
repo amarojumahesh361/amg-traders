@@ -1,0 +1,12 @@
+{
+ "supabaseProjectId":"jkdczqofbhinlqlojydr",
+ "supabaseUrl":"https://jkdczqofbhinlqlojydr.supabase.co",
+ "organizationId":"vvqmbclgmvxsttfnxaui",
+ "region":"ap-southeast-2",
+ "adminEmail":"amarojumahesh361@gmail.com",
+ "migrationVersion":"20261019113309",
+ "edgeFunction":"amg-business",
+ "edgeFunctionVersion":1,
+ "frontendDeployment":null,
+ "githubRepository":null
+}

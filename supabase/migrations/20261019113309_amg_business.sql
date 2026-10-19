@@ -18,25 +18,24 @@ alter table public.amg_command_audit enable row level security;
 revoke all on public.amg_business, public.amg_command_audit from anon, authenticated;
 grant select on public.amg_business, public.amg_command_audit to authenticated;
 grant all on public.amg_business, public.amg_command_audit to service_role;
-create function public.amg_is_admin() returns boolean language sql stable security definer set search_path = '' as $$
+create schema if not exists amg_private;
+revoke all on schema amg_private from public, anon;
+grant usage on schema amg_private to authenticated, service_role;
+create function amg_private.amg_is_admin() returns boolean language sql stable security definer set search_path = '' as $$
  select exists(select 1 from auth.users u where u.id = auth.uid()
  and lower(u.email) = 'amarojumahesh361@gmail.com' and u.email_confirmed_at is not null);
 $$;
-revoke all on function public.amg_is_admin() from public, anon;
-grant execute on function public.amg_is_admin() to authenticated, service_role;
+revoke all on function amg_private.amg_is_admin() from public, anon;
+grant execute on function amg_private.amg_is_admin() to authenticated, service_role;
 create policy amg_admin_reads_business on public.amg_business for select to authenticated
- using (owner = auth.uid() and public.amg_is_admin());
+ using (owner = (select auth.uid()) and (select amg_private.amg_is_admin()));
 create policy amg_admin_reads_audit on public.amg_command_audit for select to authenticated
- using (owner = auth.uid() and public.amg_is_admin());
+ using (owner = (select auth.uid()) and (select amg_private.amg_is_admin()));
 -- Only the server may commit validated commands. Row update and audit insert share one transaction.
 create function public.amg_save_state(p_owner uuid, p_expected_version integer, p_state jsonb, p_command jsonb)
-returns boolean language plpgsql security definer set search_path = '' as $$
+returns boolean language plpgsql security invoker set search_path = '' as $$
 declare changed integer;
 begin
- if not exists(select 1 from auth.users u where u.id=p_owner
-   and lower(u.email)='amarojumahesh361@gmail.com' and u.email_confirmed_at is not null) then
-   raise exception 'Admin access required';
- end if;
  if p_expected_version < 0 or (p_state->>'schema') is distinct from '1' or jsonb_typeof(p_state) <> 'object' then
    raise exception 'Invalid business state';
  end if;
@@ -55,4 +54,5 @@ end;
 $$;
 revoke all on function public.amg_save_state(uuid,integer,jsonb,jsonb) from public, anon, authenticated;
 grant execute on function public.amg_save_state(uuid,integer,jsonb,jsonb) to service_role;
+
 

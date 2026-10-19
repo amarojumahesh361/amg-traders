@@ -19,6 +19,7 @@ export async function signOut(){
 
 export async function requestAdminLink(){
  if(!supabase)throw Error('Supabase configuration is missing');
- const {error}=await supabase.auth.signInWithOtp({email:ADMIN_EMAIL,options:{shouldCreateUser:false,emailRedirectTo:window.location.origin+'/'}});
+ const {error}=await supabase.auth.signInWithOtp({email:ADMIN_EMAIL,options:{shouldCreateUser:true,emailRedirectTo:window.location.origin+'/'}});
  if(error)throw error;
 }
+
