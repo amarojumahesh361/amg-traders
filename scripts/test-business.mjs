@@ -24,3 +24,13 @@ const duplicate=cmd('expense',{amount:10000,mode:'cash',note:'Test expense'});s=
 const b=s.batches.find(b=>b.product===pet&&b.qty>0);run('damage',{batch:b.id,qty:1,note:'Broken case'});assert.equal(stock(s,pet),7);
 assert.throws(()=>run('sale',{party:customer,lines:[{product:pet,qty:1.5,rate:50000}],paid:0,mode:'cash'}),/Invalid/);
 console.log('PASS: stock, credit, payments, refunds, return limits, expiry preservation, crates, damage, integer cases and idempotency');
+run('party',{kind:'customer',name:'Phone customer',phone:'+91 90000 00001',opening:0,limit:0});
+const phoneCustomer=s.parties.at(-1);
+assert.equal(phoneCustomer.phone,'9000000001');
+assert.throws(()=>run('party',{kind:'customer',name:'Duplicate phone',phone:'9000000001'}),/already belongs/);
+assert.throws(()=>run('party',{kind:'customer',name:'Invalid phone',phone:'12345'}),/valid 10-digit/);
+run('party',{kind:'customer',name:'Walk-in wholesale',phone:'',walkin:true});const walkin=s.parties.at(-1).id;
+assert.throws(()=>run('sale',{party:walkin,lines:[{product:pet,qty:1,rate:60000}],paid:0,mode:'cash'}),/fully paid/);
+run('sale',{party:walkin,lines:[{product:pet,qty:1,rate:60000}],paid:60000,mode:'cash'});
+assert.equal(balance(s,walkin),0);
+console.log('PASS: phone normalisation, unique customer mobiles, invalid phone rejection and fully paid walk-in sales');

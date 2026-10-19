@@ -1,5 +1,5 @@
 export type Product = {id:string;name:string;brand:string;size:string;pack:number;rate:number;min:number;container:string;deposit:number};
-export type Party = {id:string;name:string;phone:string;kind:'customer'|'supplier';opening:number;limit:number};
+export type Party = {id:string;name:string;phone:string;kind:'customer'|'supplier';opening:number;limit:number;area?:string;walkin?:boolean};
 export type Batch = {id:string;product:string;qty:number;cost:number;expiry:string};
 export type Line = {product:string;qty:number;rate:number;cost?:number;batch?:string;expiry?:string;deposit?:number;allocations?:{batch:string;qty:number;cost:number;expiry:string}[]};
 export type Entry = {id:string;at:string;type:string;party:string;lines:Line[];amount:number;paid:number;mode:string;note:string;number:string;discount:number;containers?:number;container?:string;ref?:string;void?:boolean;cost?:number};
@@ -8,6 +8,7 @@ export type Command = {id:string;type:string;at:string;payload:any};
 export const initial = ():State => ({schema:1,products:[],parties:[],batches:[],entries:[],rates:{},settings:{name:'AMG TRADERS',address:'Venkatagiri, Yousufguda, Hyderabad',phone:''},applied:[]});
 export const money=(v:number)=>new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR',maximumFractionDigits:2}).format(v/100);
 export const stock=(s:State,id:string)=>s.batches.filter(b=>b.product===id).reduce((n,b)=>n+b.qty,0);
+export function normalisePhone(value:string){let digits=value.replace(/\D/g,'');if(digits.length===12&&digits.startsWith('91'))digits=digits.slice(2);return /^[6-9]\d{9}$/.test(digits)?digits:''}
 export function balance(s:State,id:string){const p=s.parties.find(p=>p.id===id);return (p?.opening||0)+s.entries.filter(e=>e.party===id&&!e.void).reduce((n,e)=>n+(e.type==='sale'||e.type==='purchase'?e.amount-e.paid:e.type==='payment'?-e.amount:e.type==='sale-return'||e.type==='purchase-return'?-e.amount:e.type==='deposit-charge'?e.amount:e.type==='deposit-refund'?-e.amount:0),0)}
 export function empties(s:State,party:string,container:string){return s.entries.filter(e=>e.party===party&&e.container===container&&!e.void).reduce((n,e)=>n+(e.type==='container-out'?e.containers||0:e.type==='container-in'?-(e.containers||0):0),0)}
 const fail=(s:string):never=>{throw new Error(s)};
@@ -25,7 +26,13 @@ export function apply(state:State,c:Command):State{
   s.products.push(x);
  }else if(c.type==='party'){
   if(!['customer','supplier'].includes(p.kind))fail('Invalid party type');
-  s.parties.push({id:c.id,name:text(p.name,'name'),phone:typeof p.phone==='string'?p.phone.slice(0,30):'',kind:p.kind,opening:integer(p.opening||0,'opening due'),limit:integer(p.limit||0,'credit limit')});
+  const rawPhone=typeof p.phone==='string'?p.phone.trim():'',phone=rawPhone?normalisePhone(rawPhone):'';
+  if(rawPhone&&!phone)fail('Enter a valid 10-digit Indian mobile number');
+  if(phone&&s.parties.some(x=>x.kind===p.kind&&normalisePhone(x.phone)===phone))fail('This phone number already belongs to a '+p.kind);
+  if(p.walkin&&p.kind!=='customer')fail('Walk-in must be a customer');
+  if(p.walkin&&(phone||p.opening||p.limit))fail('Walk-in cannot have a phone, opening due or credit limit');
+  if(p.walkin&&s.parties.some(x=>x.walkin))fail('Walk-in customer already exists');
+  s.parties.push({id:c.id,name:text(p.name,'name'),phone,kind:p.kind,opening:integer(p.opening||0,'opening due'),limit:integer(p.limit||0,'credit limit'),area:typeof p.area==='string'?p.area.trim().slice(0,100):'',walkin:p.walkin===true});
  }else if(c.type==='settings'){
   s.settings={name:text(p.name,'shop name'),address:text(p.address,'address'),phone:String(p.phone||'').slice(0,30)};
  }else if(c.type==='rate'){
@@ -59,6 +66,7 @@ export function apply(state:State,c:Command):State{
   const deposit=lines.reduce((n,l)=>n+l.qty*(l.deposit||0),0);
   const amount=total-discount+deposit,paid=integer(p.paid||0,'payment');if(paid>amount)fail('Payment exceeds bill; record extra as advance separately');
   if(!['cash','upi','bank'].includes(p.mode))fail('Choose payment mode');
+  if(c.type==='sale'&&party().walkin&&paid!==amount)fail('Walk-in sales must be fully paid');
   if(c.type==='sale'&&party().limit&&balance(s,p.party)+amount-paid>party().limit)fail('Customer credit limit exceeded');
   add(c.type,{lines,amount,paid,discount,cost:totalCost,note:String(p.note||'').slice(0,300)});
   for(const [container,qty] of Object.entries(containers))add('container-out',{id:c.id+'-'+container,container,containers:qty,ref:c.id});
