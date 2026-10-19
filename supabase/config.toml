@@ -1,0 +1,4 @@
+# Auth is verified inside the handler against Supabase Auth on every request.
+# This supports modern signing keys without relying on the gateway legacy-JWT check.
+[functions.amg-business]
+verify_jwt = false
