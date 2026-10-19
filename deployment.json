@@ -7,6 +7,6 @@
   "migrationVersion": "20261019113309",
   "edgeFunction": "amg-business",
   "edgeFunctionVersion": 1,
-  "frontendDeployment": null,
+  "frontendDeployment": "https://amg-traders.vercel.app",
   "githubRepository": "https://github.com/amarojumahesh361/amg-traders"
 }

@@ -4,7 +4,7 @@ React/Vite frontend on Vercel, Supabase Auth/PostgreSQL/Edge Functions backend. 
 
 ## Current status
 
-Supabase project `jkdczqofbhinlqlojydr` is active in the separate AMG organization. The initial database migration is applied and Edge Function `amg-business` version 1 is deployed. Security advisors reported no issues. Live checks confirmed 401 rejection for anonymous reads/writes and invalid tokens; preflight returns 204. Actual admin sign-in and real phone/laptop sync still need verification after frontend deployment. GitHub repository: https://github.com/amarojumahesh361/amg-traders. Vercel frontend deployment remains pending; follow VERCEL_SETUP.md. Existing Sites publication is a separate deployment.
+Supabase project `jkdczqofbhinlqlojydr` is active in the separate AMG organization. The initial database migration is applied and Edge Function `amg-business` version 1 is deployed. Security advisors reported no issues. Live checks confirmed 401 rejection for anonymous reads/writes and invalid tokens; preflight returns 204. Actual admin sign-in and real phone/laptop sync still need verification after frontend deployment. GitHub repository: https://github.com/amarojumahesh361/amg-traders. Vercel frontend is deployed at https://amg-traders.vercel.app. Login screen has been verified. Supabase Auth URL configuration and the admin email sign-in must be completed before authenticated business/phone sync verification. Existing Sites publication is a separate deployment.
 
 ## Accounts and access
 
@@ -54,6 +54,7 @@ Offline access requires a prior online login and cached application assets. A di
 - Existing stock can be recorded as an opening purchase with a clear note. Customer/supplier opening balances must be real.
 - Backups export JSON; restore/import remains disabled to avoid overwriting live accounts accidentally.
 - Before any production use, perform real authenticated and phone/laptop offline tests against the new deployment. Mock tests do not replace those checks.
+
 
 
 
