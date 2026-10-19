@@ -17,3 +17,8 @@ export async function signOut(){
  await new Promise<void>((yes,no)=>{const r=indexedDB.open('amg-v1',1);r.onupgradeneeded=()=>r.result.createObjectStore('data');r.onerror=()=>no(r.error);r.onsuccess=()=>{const db=r.result,tx=db.transaction('data','readwrite');tx.objectStore('data').clear();tx.oncomplete=()=>{db.close();yes()};tx.onerror=()=>{db.close();no(tx.error)}}});
 }
 
+export async function requestAdminLink(){
+ if(!supabase)throw Error('Supabase configuration is missing');
+ const {error}=await supabase.auth.signInWithOtp({email:ADMIN_EMAIL,options:{shouldCreateUser:false,emailRedirectTo:window.location.origin+'/'}});
+ if(error)throw error;
+}
