@@ -12,7 +12,7 @@
     "dev": "vite --host 127.0.0.1",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host 127.0.0.1",
-    "test": "node --experimental-strip-types scripts/test-business.mjs && node --experimental-strip-types --test scripts/api.test.mjs"
+    "test": "node --experimental-strip-types scripts/test-business.mjs && node --experimental-strip-types --test scripts/api.test.mjs && node scripts/auth-ui.test.cjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.118.0",
@@ -24,6 +24,7 @@
     "@types/react": "19.2.3",
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "6.0.2",
+    "jsdom": "26.1.0",
     "typescript": "5.9.3",
     "vite": "^8.3.4"
   }
