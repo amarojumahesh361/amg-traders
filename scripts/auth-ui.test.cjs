@@ -7,13 +7,12 @@ for(const key of ['window','document','navigator','HTMLElement','HTMLInputElemen
 global.IS_REACT_ACT_ENVIRONMENT=true;
 const React=req('react'),{createRoot}=req('react-dom/client'),{act}=React;
 const ADMIN_EMAIL='amarojumahesh361@gmail.com',adminSession={user:{email:ADMIN_EMAIL,email_confirmed_at:'2026-10-31T00:00:00Z'}};
-let listener,session=null,invalidOtp=false,updateCalls=0,loginCalls=0,resetCalls=0,businessMounts=0;
+let listener,session=null,updateCalls=0,loginCalls=0,resetCalls=0,businessMounts=0;
 const client={auth:{
  getSession:async()=>({data:{session},error:null}),
  onAuthStateChange:fn=>{listener=fn;return{data:{subscription:{unsubscribe(){}}}}},
  signInWithPassword:async()=>{loginCalls++;return{data:{session:null},error:{code:'invalid_credentials',message:'Invalid credentials'}}},
  resetPasswordForEmail:async(email)=>{assert.equal(email,ADMIN_EMAIL);resetCalls++;return{error:null}},
- verifyOtp:async data=>{assert.equal(data.type,'recovery');assert.equal(data.email,ADMIN_EMAIL);if(invalidOtp)return{data:{session:null},error:{message:'Expired'}};session=adminSession;listener('PASSWORD_RECOVERY',session);return{data:{session},error:null}},
  updateUser:async()=>{updateCalls++;listener('USER_UPDATED',adminSession);return{error:null}},
  signOut:async()=>{session=null;listener('SIGNED_OUT',null);return{error:null}}
 }};
@@ -29,13 +28,13 @@ async function submit(label){const form=w.document.querySelector('form[aria-labe
 async function main(){
  await render();assert.ok(w.document.querySelector('input[autocomplete="current-password"]'));
  await fill('input[autocomplete="current-password"]','Synthetic test password');await submit('Email and password sign in');assert.equal(loginCalls,1);assert.match(w.document.body.textContent,/incorrect/);assert.equal(businessMounts,0);
- await click('Forgot password');await submit('Request password reset code');assert.equal(resetCalls,1);assert.ok(w.document.querySelector('input[autocomplete="one-time-code"]'));
- invalidOtp=true;await fill('input[autocomplete="one-time-code"]','123456');await submit('Verify password reset code');assert.equal(updateCalls,0);assert.match(w.document.body.textContent,/invalid or expired/);assert.equal(businessMounts,0);
- invalidOtp=false;await fill('input[autocomplete="one-time-code"]','654321');await submit('Verify password reset code');assert.ok(w.document.querySelector('form[aria-label="Set new password"]'));assert.equal(businessMounts,0,'recovery must not open the business');
+ await click('Forgot password');await submit('Request password reset link');assert.equal(resetCalls,1);assert.match(w.document.body.textContent,/Reset link requested/);assert.equal(w.document.querySelector('input[autocomplete="one-time-code"]'),null);
+ assert.equal(updateCalls,0);assert.equal(businessMounts,0);
+ await act(async()=>{session=adminSession;listener('PASSWORD_RECOVERY',session);await flush()});assert.ok(w.document.querySelector('form[aria-label="Set new password"]'));assert.equal(businessMounts,0,'recovery must not open the business');
  await fill('input[autocomplete="new-password"]','Synthetic secret 123');await fill('label:nth-of-type(2) input','Different secret 123');await submit('Set new password');assert.equal(updateCalls,0);assert.match(w.document.body.textContent,/do not match/);
  await fill('label:nth-of-type(2) input','Synthetic secret 123');await submit('Set new password');assert.equal(updateCalls,1);assert.equal(businessMounts,0);assert.equal(sessionStorage.getItem('amg-password-recovery'),null);assert.ok(w.document.querySelector('input[autocomplete="current-password"]'));
  await act(async()=>root.unmount());sessionStorage.setItem('amg-password-recovery','password');session=adminSession;const anotherRoot=createRoot(w.document.getElementById('root'));await act(async()=>{anotherRoot.render(React.createElement(Component));await flush()});assert.ok(w.document.querySelector('form[aria-label="Set new password"]'));assert.equal(businessMounts,0,'reload in recovery must not open business');await act(async()=>anotherRoot.unmount());
- console.log('PASS: password login UI; invalid credentials; recovery request; invalid OTP; verified recovery gate; password mismatch; password update; reset signout preserves cache; recovery reload gate.');
+ console.log('PASS: password login UI; invalid credentials; reset-link request; verified recovery gate; password mismatch; password update; reset signout preserves cache; recovery reload gate.');
  w.close();
 }
 main().catch(error=>{console.error(error);w.close();process.exit(1)});
